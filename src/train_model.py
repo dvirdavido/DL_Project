@@ -20,9 +20,10 @@ np.set_printoptions(threshold=sys.maxsize)
 import soundfile as sf
 import pysepm
 from data.metrics import *
-from aecmos import aecmos
+#from aecmos import aecmos
 
-# ======================== Model section ===========================
+
+# ======================== Model section =======================
 
 
 epsilon = 1e-12
