@@ -1,0 +1,92 @@
+defaults:
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+
+#  =========== models and output path ===============
+################ test ###########################
+mic_wav :  '/data/ssd/ofersc/NN_AEC/data/external/Test/real/zoIYIrOd5EetyP2c80g_Xg_doubletalk_mic.wav'
+ref_wav :  '/data/ssd/ofersc/NN_AEC/data/external/Test/real/zoIYIrOd5EetyP2c80g_Xg_doubletalk_lpb.wav'
+#Output_saving_directory_single_test : '/data/ssd/ofersc/NNֹ_AEC/Test/real/'
+
+# # For testing directory of files with measurements 
+# path_mic_wav : '/data/ssd/ofersc/NNֹ_AEC/Test/nearend_mic_signal/'
+# path_ref_wav : '/data/ssd/ofersc/NNֹ_AEC/Test/farend_speech_aligned/'
+# path_speech_wav : '/data/ssd/ofersc/NNֹ_AEC/Test/nearend_mic_signal/'
+
+# Output_saving_directory_multi_test : '/data/ssd/ofersc/NNֹ_AEC/outputs/'
+################ pred #############################
+# baseline AEC 2022 Algorithm
+model_path : /data/ssd/ofersc/NN_AEC/references/AEC_2022/dec-baseline-model-icassp2022.onnx
+#data_dir : /data/ssd/ofersc/NN_AEC/data/external/Test/CEVA_database/ 
+#output_dir : /data/ssd/ofersc/NN_AEC/data/external/Test/CEVA_database/
+output_sr : 16000
+
+# Our algorithm
+# For testing directory of files with measurements 
+path_wav : '/data/ssd/ofersc/NN_AEC/data/external/Test/CEVA_database/'
+
+# =============== DEBUG ===============
+debug_flag: True
+
+# Model 
+#infer_from_ckpt : /data/ssd/ofersc/NN_AEC/models/Basic_model/lightning_logs/version_0/checkpoints/last.ckpt # MMSE ON IRM LOSS
+#infer_from_ckpt : /data/ssd/ofersc/NN_AEC/models/Basic_model_snr_loss/lightning_logs/version_1/checkpoints/last.ckpt # SNR LOSS
+#infer_from_ckpt : /data/ssd/ofersc/NN_AEC/models/Basic_model_snr_loss_normalization/lightning_logs/version_12/checkpoints/last.ckpt # SNR LOSS + Normalization 
+#infer_from_ckpt : /data/ssd/ofersc/NN_AEC/models/Basic_model_snr_loss_normalization_dt/lightning_logs/version_7/checkpoints/last.ckpt # SNR LOSS + Normalization + dt 
+#infer_from_ckpt : /data/ssd/ofersc/NN_AEC/models/Basic_rand_inputs/lightning_logs/version_6/checkpoints/last.ckpt # SNR LOSS + Normalization + dt + rand inputs
+#infer_from_ckpt : /data/ssd/ofersc/NN_AEC/models/Basic_rand_inputs+std/lightning_logs/version_7/checkpoints/last.ckpt # SNR LOSS + Normalization + dt + rand inputs
+infer_from_ckpt :  /data/ssd/ofersc/NN_AEC/models/Basic_rand_inputs_20000/lightning_logs/version_30/checkpoints/last.ckpt # SNR LOSS + Normalization + dt + rand inputs
+test_mode : True
+train_mode : False
+
+#aecmos: 
+#input_aecmos : '/data/ssd/ofersc/NN_AEC/data/external/Test/CEVA_database/'
+#dataset_aecmos : '/data/ssd/ofersc/NN_AEC/data/external/Test/CEVA_database/'
+#score_file_aecmos : '/data/ssd/ofersc/NN_AEC/data/external/Test/CEVA_database/'
+
+# =============== data HP ===============
+window_size: 512
+overlap: 256
+context : 1
+sample_rate : 16000
+# # =============== ========================== Hydra config ==============================================================
+hydra:
+  run:
+    dir: /data/ssd/ofersc/NN_AEC/models/${hydra.job.override_dirname}/${hydra.job.name}/
+  job:
+    name: 'Basic_rand_inputs+std'
+    config:
+      # configuration for the ${hydra.job.override_dirname} runtime variable
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        # Remove all paths, as the / in them would mess up things
+        # Remove params that would not impact the training itself
+        # Remove all slurm and submit params.
+        exclude_keys: [
+          'hydra.job_logging.handles.file.filename',
+          'dset.train', 'dset.valid', 'dset.test', 'dset.mix_json', 'dset.mix_dir',
+          'num_prints', 'continue_from',
+          'device', 'num_workers', 'print_freq', 'restart', 'verbose',
+          'log', 'ddp', 'ddp_backend', 'rendezvous_file', 'rank', 'world_size', 'cuda_visible_devices']
+  job_logging:
+    handlers:
+      file:
+        class: logging.FileHandler
+        mode: w
+        formatter: colorlog
+        filename: trainer.log
+      console:
+        class: logging.StreamHandler
+        formatter: colorlog
+        stream: ext://sys.stderr
+
+  hydra_logging:
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: colorlog
+        stream: ext://sys.stderr
+
+
+

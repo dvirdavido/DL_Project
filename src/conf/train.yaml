@@ -1,0 +1,120 @@
+defaults:
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+
+#  =========== data-sets ===============
+
+# Main dataset
+data_set_path : C:\Users\sagitorr\Documents\University\Final_Project\Project\dl_project\data\features
+
+starting_point : 
+  train: 0 
+  val: 10
+  test: 0
+
+amount : 
+  train: 10 
+  val: 5
+  test: 0
+
+# # For measurements in 'validation_epoch_end' stage
+# # for real recordings
+path_wav : '/data/ssd/ofersc/datasets/Test/real/'
+
+# #aecmos: 
+# input_aecmos : '/data/ssd/ofersc/NN_AEC/data/external/Test/real/'
+# dataset_aecmos : '/data/ssd/ofersc/NN_AEC/data/external/Test/real/'
+# score_file_aecmos : '/data/ssd/ofersc/NN_AEC/data/external/Test/real/'
+
+# path_mic_wav : '/data/ssd/ofersc/NN_AEC/data/AEC_challenge/nearend_mic_signal/'
+# path_ref_wav : '/data/ssd/ofersc/NN_AEC/data/AEC_challenge/farend_speech_aligned/'
+# path_speech_wav : '/data/ssd/ofersc/NN_AEC/data/AEC_challenge/nearend_speech_scaled/'
+
+# data_dir : 
+  # train: ${data_set_path}/train/aud_files/
+  # val  : ${data_set_path}/val/aud_files/
+  # test : ${data_set_path}/test/aud_files/
+
+# =============== DEBUG ===============
+# debug_flag: False
+debug_flag: True
+
+# =============== data HP ===============
+window_size : 512
+overlap : 256
+context : 1
+sample_rate : 16000
+# =========== Model HP ==============
+
+train_batch_size : 8
+val_batch_size : 8
+test_batch_size : 1
+pin_memory : False
+data_loader_shuffle : True
+
+# ======= Optimizer ===========
+optimizer : Adam
+learning_rate : 1e-4
+predict_mode : False
+# ======== Criterion ==========
+
+criterion : MSELoss # MSEloss #L1loss
+
+# ========= ModelCheckPoints =========
+
+patience : 25 # number of epochs after convergence
+save_top_k: 5
+save_last: True
+ckpt_monitor: 'val_loss'
+resume_from_checkpoint : None
+
+check_val_every_n_epoch : 1
+precision : 16
+progress_bar_refresh_rate : 5
+log_gpu_memory : False
+epsilon : 1e-6
+num_workers : 10
+
+# ================ CUDA ======================
+gpus : 'None'
+# gpus : -1
+# cuda_visible_devices:  '0,1'
+# ========================================= Hydra config ==============================================================
+hydra:
+  run:
+    dir: /data/ssd/ofersc/NN_AEC_RLS/models/${hydra.job.override_dirname}/${hydra.job.name}/
+
+  job:
+    name: 'Basic_run'
+    config:
+      # configuration for the ${hydra.job.override_dirname} runtime variable
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        # Remove all paths, as the / in them would mess up things
+        # Remove params that would not impact the training itself
+        # Remove all slurm and submit params.
+        exclude_keys: [
+          'hydra.job_logging.handles.file.filename',
+          'dset.train', 'dset.valid', 'dset.test', 'dset.mix_json', 'dset.mix_dir',
+          'num_prints', 'continue_from',
+          'device', 'num_workers', 'print_freq', 'restart', 'verbose',
+          'log', 'ddp', 'ddp_backend', 'rendezvous_file', 'rank', 'world_size', 'cuda_visible_devices']
+  job_logging:
+    handlers:
+      file:
+        class: logging.FileHandler
+        mode: w
+        formatter: colorlog
+        filename: trainer.log
+      console:
+        class: logging.StreamHandler
+        formatter: colorlog
+        stream: ext://sys.stderr
+
+  hydra_logging:
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: colorlog
+        stream: ext://sys.stderr
